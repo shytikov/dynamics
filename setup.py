@@ -6,7 +6,9 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name='dynamics',
     version='0.2',
-    scripts=['dynamics.py'],
+    scripts=[
+        'dynamics.py'
+    ],
     author="Alexey Shytikov",
     author_email="alexey.shytikov@gmail.com",
     description="A pandas helper to interact with MS Dynamics",
