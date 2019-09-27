@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='dynamics',
-    version='0.1',
+    version='0.2',
     scripts=['dynamics.py'],
     author="Alexey Shytikov",
     author_email="alexey.shytikov@gmail.com",
