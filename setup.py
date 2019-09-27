@@ -4,15 +4,20 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='pandyn',
+    name='dynamics',
     version='0.1',
-    scripts=['pandyn.py'],
+    scripts=['dynamics.py'],
     author="Alexey Shytikov",
     author_email="alexey.shytikov@gmail.com",
     description="A pandas helper to interact with MS Dynamics",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/shytikov/pandyn",
+    url="https://github.com/shytikov/dynamics",
+    install_requires=[
+        'adal',
+        'pandas',
+        'requests',
+    ],
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
