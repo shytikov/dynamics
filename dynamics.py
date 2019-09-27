@@ -5,7 +5,7 @@ import requests
 
 class Utils:
 
-    def any_to_int(data, columns):
+    def any_to_int(data: pandas.DataFrame, columns: list) -> None:
         for column in columns:
             loc = data.columns.get_loc(column)
 
@@ -16,14 +16,14 @@ class Utils:
             data.pop(column)
             data.insert(loc=loc, column=column, value=value)
 
-    def any_to_dt(data, columns):
+    def any_to_dt(data: pandas.DataFrame, columns: list) -> None:
         for column in columns:
             data[column] = pandas.to_datetime(data[column])
 
 
 class Entity:
 
-    def __init__(self, connection, name, prefer_annotations=False):
+    def __init__(self, connection, name: str, prefer_annotations: bool = False):
         self.endpoint = f'{connection.resource}/api/data/v9.1/'
         self.name = name
         self.data = None
@@ -62,13 +62,22 @@ class Entity:
         else:
             raise Exception(f"Metadata request has failed. Check name of the entity: '{self.name}'.")
 
-    def read(self) -> pandas.DataFrame:
-        result = self.session.get(f'{self.base}')
-        result = result.json()
-        result = result['value']
+    def read(self, data: pandas.DataFrame = None) -> pandas.DataFrame:
+        """
+        Reads data to the entity instance. Either from MS Dynamics or from DataFrame supplied.
+        Uses metadata information to ensure that integers will be represented as correct integers,
+        and date values — as correct datatype.
+        """
 
-        self.data = pandas.DataFrame(result)
-        self.data.pop('@odata.etag')
+        if data is not None:
+            result = self.session.get(f'{self.base}')
+            result = result.json()
+            result = result['value']
+
+            self.data = pandas.DataFrame(result)
+            self.data.pop('@odata.etag')
+        else:
+            self.data = pandas.DataFrame(data)
 
         columns = []
         columns.extend(self.metadata[self.metadata['AttributeType'] == 'Integer']['LogicalName'].tolist())
@@ -88,10 +97,20 @@ class Connection:
     """
     Class to hold required information about MS Dynamics connection 
     """
-    def __init__(self, resource, login, password):
+
+    def __init__(self, resource: str, login: str, password: str):
+        """
+        Initiating new connection object by storing important information
+        """
+
+        # Making sure that trailing slash in not included to resource
+        index = len(resource)-1
+        if resource[index] == '/':
+            resource = resource[0:index]
+
         self.resource = resource
         self.login = login
         self.password = password
 
-    def entity(self, name, prefer_annotations=False) -> Entity:
+    def entity(self, name: str, prefer_annotations: bool = False) -> Entity:
         return Entity(self, name, prefer_annotations)
