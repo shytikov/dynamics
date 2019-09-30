@@ -55,8 +55,6 @@ class Entity:
         columns = self.metadata[self.metadata['AttributeType'] == 'DateTime']['LogicalName'].tolist()
         dynamics.utils.any_to_dt(self.data, columns)
 
-        return self.data
-
     def write(self, data: pandas.DataFrame):
         pass
 

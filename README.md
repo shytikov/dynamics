@@ -9,7 +9,7 @@ Sample code:
 ```
 import dynamics
 
-connection = dynamics.Connection(
+connection = dynamics.connect(
     'https://instance.crm4.dynamics.com', 
     'user@instance.onmicrosoft.com', 
     'password')
