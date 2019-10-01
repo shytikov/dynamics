@@ -82,11 +82,21 @@ class Entity:
         """
 
         if data is None:
-            result = self.session.get(f'{self.base}')
-            result = result.json()
-            result = result['value']
+            data = []
+            key = '@odata.nextLink'
+            url = self.base
+            
+            while True:
+                result = self.session.get(url)
+                result = result.json()
+                data.extend(result['value'])
 
-            self.data = pandas.DataFrame(result)
+                if key in result:
+                    url = result[key]
+                else:
+                    break
+            
+            self.data = pandas.DataFrame(data)
             self.data.pop('@odata.etag')
         else:
             self.data = pandas.DataFrame(data)
