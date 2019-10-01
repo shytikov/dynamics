@@ -60,7 +60,9 @@ class Entity:
 
                 # Composing disassociate URL all rows in the DataFrame
                 for row in self.data.iterrows():
-                    url = f"{self.endpoint}{name0}({row[1][column0]})/{self.name}/$ref?$id={self.endpoint}{name1}({row[1][column1]})"
+                    part1 = f"{self.endpoint}{name0}({row[1][column0]})"
+                    part2 = f"{self.endpoint}{name1}({row[1][column1]})"
+                    url = f"{part1}/{self.name}/$ref?$id={part2}"
                     urls.append(url)
             else:
                 condition = self.metadata['IsPrimaryId'] == True
@@ -85,7 +87,7 @@ class Entity:
             data = []
             key = '@odata.nextLink'
             url = self.base
-            
+
             while True:
                 result = self.session.get(url)
                 result = result.json()
@@ -95,7 +97,7 @@ class Entity:
                     url = result[key]
                 else:
                     break
-            
+
             self.data = pandas.DataFrame(data)
             self.data.pop('@odata.etag')
         else:
@@ -109,7 +111,18 @@ class Entity:
         columns = self.metadata[self.metadata['AttributeType'] == 'DateTime']['LogicalName'].tolist()
         dynamics.utils.any_to_dt(self.data, columns)
 
-    def write(self, data: pandas.DataFrame) -> None:
+        columns = self.data.columns.to_list()
+
+        keys = list(filter(lambda x: x.startswith('_') and x.endswith('_value'), columns))
+        values = list(map(lambda x: x[1:-6], keys))
+
+        column_mapping = dict(zip(keys, values))
+        self.data.rename(column_mapping, axis=1, inplace=True)
+
+    def write(self, data: pandas.DataFrame = None) -> None:
+        """
+        Writes to the entity. Either from internal instance data or from dataframe supplied.
+        """
         pass
 
 
