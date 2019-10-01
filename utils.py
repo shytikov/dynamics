@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import adal
 import pandas
 import requests
