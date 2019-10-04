@@ -22,7 +22,7 @@ def any_to_dt(data: pandas.DataFrame, columns: list) -> None:
         data[column] = pandas.to_datetime(data[column])
 
 
-def get_session(resource: str, login: str, password: str, prefer_annotations: bool):
+def get_session(resource: str, login: str, password: str) -> requests.Session:
     context = adal.AuthenticationContext("https://login.microsoftonline.com/common/")
 
     result = context.acquire_token_with_username_password(
@@ -38,9 +38,7 @@ def get_session(resource: str, login: str, password: str, prefer_annotations: bo
         'OData-Version': '4.0',
         'Accept': 'application/json',
         'Content-Type': 'application/json; charset=utf-8',
+        'Prefer': 'odata.include-annotations="*"'
     }
-
-    if prefer_annotations:
-        session.headers['Prefer'] = 'odata.include-annotations=OData.Community.Display.V1.FormattedValue'
 
     return session

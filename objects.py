@@ -6,7 +6,7 @@ import dynamics.utils
 
 class Entity:
 
-    def __init__(self, connection, name: str, prefer_annotations: bool = False):
+    def __init__(self, connection, name: str):
         self.endpoint = f'{connection.resource}/api/data/v9.1/'
         self.name = name
         self.base = None
@@ -17,8 +17,7 @@ class Entity:
         self.session = dynamics.utils.get_session(
             connection.resource,
             connection.login,
-            connection.password,
-            prefer_annotations
+            connection.password
         )
 
         url = f"{self.endpoint}EntityDefinitions(LogicalName='{self.name}')?$select=IsIntersect,EntitySetName&$expand=Attributes"
@@ -99,9 +98,8 @@ class Entity:
                     break
 
             self.data = pandas.DataFrame(data)
-            self.data.pop('@odata.etag')
         else:
-            self.data = pandas.DataFrame(data)
+            self.data = data
 
         columns = []
         columns.extend(self.metadata[self.metadata['AttributeType'] == 'Integer']['LogicalName'].tolist())
@@ -113,11 +111,41 @@ class Entity:
 
         columns = self.data.columns.to_list()
 
-        keys = list(filter(lambda x: x.startswith('_') and x.endswith('_value'), columns))
-        values = list(map(lambda x: x[1:-6], keys))
+        lookups = list(filter(lambda x: x.startswith('_') and x.endswith('_value'), columns))
+        annotations = list(filter(lambda x: '@' in x, columns))
+        targets = list(filter(lambda x: '.lookuplogicalname' in x, annotations))
+        properties = list(filter(lambda x: '.associatednavigationproperty' in x, annotations))
 
-        column_mapping = dict(zip(keys, values))
-        self.data.rename(column_mapping, axis=1, inplace=True)
+        collections = []
+
+        for item in targets:
+            collections.extend(self.data[item].unique().tolist())
+
+        collections = dict.fromkeys(collections)
+        collections = dict.fromkeys([x for x in collections if str(x) != 'nan'])
+
+        for item in collections:
+            response = self.session.get(f"{self.endpoint}EntityDefinitions(LogicalName='{item}')?$select=EntitySetName")
+            response = response.json()
+            collections[item] = response['EntitySetName']
+
+        for item in targets:
+            self.data[item].replace(collections, inplace=True)
+            attribute = item.split('@')[0]
+            self.data[attribute] = '/' + self.data[item].astype(str) + '/(' + self.data[attribute] + ')'
+
+        keys = []
+        values = []
+
+        for item in properties:
+            value = [x for x in self.data[item].unique() if str(x) != 'nan']
+            if len(value) > 0:
+                values.append(f"{value[0]}@odata.bind")
+                keys.append(item.split('@')[0])
+
+        self.data.drop(annotations, axis=1, inplace=True)
+
+        self.data.rename(dict(zip(keys, values)), axis=1, inplace=True)
 
     def write(self, data: pandas.DataFrame = None) -> None:
         """
@@ -145,5 +173,5 @@ class Connection:
         self.login = login
         self.password = password
 
-    def entity(self, name: str, prefer_annotations: bool = False) -> Entity:
-        return Entity(self, name, prefer_annotations)
+    def entity(self, name: str) -> Entity:
+        return Entity(self, name)
