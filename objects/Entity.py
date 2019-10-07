@@ -1,7 +1,7 @@
 # flake8: noqa
 
+from dynamics.objects.Utils import Utils
 import pandas
-import dynamics.utils
 
 
 class Entity:
@@ -10,11 +10,11 @@ class Entity:
         self.endpoint = f'{connection.resource}/api/data/v9.1/'
         self.name = name
         self.base = None
-        self.data = None
+        self.data = connection.data
         self.metadata = None
         self.intersection = False
 
-        self.session = dynamics.utils.get_session(
+        self.session = Utils.get_session(
             connection.resource,
             connection.login,
             connection.password
@@ -75,39 +75,42 @@ class Entity:
             for url in urls:
                 self.session.delete(url)
 
-    def read(self, data: pandas.DataFrame = None) -> None:
+    def read(self) -> None:
         """
         Reads data to the entity instance. Either from MS Dynamics or from DataFrame supplied.
         Uses metadata information to ensure that integers will be represented as correct integers,
         and date values — as correct datatype.
         """
 
-        if data is None:
-            data = []
-            key = '@odata.nextLink'
-            url = self.base
+        data = []
+        key = '@odata.nextLink'
+        url = self.base
 
-            while True:
-                result = self.session.get(url)
-                result = result.json()
-                data.extend(result['value'])
+        while True:
+            result = self.session.get(url)
+            result = result.json()
+            data.extend(result['value'])
 
-                if key in result:
-                    url = result[key]
-                else:
-                    break
+            if key in result:
+                url = result[key]
+            else:
+                break
 
-            self.data = pandas.DataFrame(data)
-        else:
-            self.data = data
+        self.data.drop(self.data.index, axis=0, inplace=True)
+        self.data.drop(self.data.columns, axis=1, inplace=True)
+
+        data = pandas.DataFrame(data)
+
+        for item in data.columns:
+            self.data.insert(data.columns.get_loc(item), item, data[item])
 
         columns = []
         columns.extend(self.metadata[self.metadata['AttributeType'] == 'Integer']['LogicalName'].tolist())
         columns.extend(self.metadata[self.metadata['AttributeType'] == 'Picklist']['LogicalName'].tolist())
-        dynamics.utils.any_to_int(self.data, columns)
+        Utils.any_to_int(self.data, columns)
 
         columns = self.metadata[self.metadata['AttributeType'] == 'DateTime']['LogicalName'].tolist()
-        dynamics.utils.any_to_dt(self.data, columns)
+        Utils.any_to_dt(self.data, columns)
 
         columns = self.data.columns.to_list()
 
@@ -152,26 +155,3 @@ class Entity:
         Writes to the entity. Either from internal instance data or from dataframe supplied.
         """
         pass
-
-
-class Connection:
-    """
-    Class to hold required information about MS Dynamics connection 
-    """
-
-    def __init__(self, resource: str, login: str, password: str):
-        """
-        Initiating new connection object by storing important information
-        """
-
-        # Making sure that trailing slash in not included to resource
-        index = len(resource)-1
-        if resource[index] == '/':
-            resource = resource[0:index]
-
-        self.resource = resource
-        self.login = login
-        self.password = password
-
-    def entity(self, name: str) -> Entity:
-        return Entity(self, name)
