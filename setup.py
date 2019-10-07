@@ -7,8 +7,9 @@ setuptools.setup(
     name='dynamics',
     version='0.5',
     scripts=[
-        'objects.py',
-        'utils.py'
+        'objects/Connection.py',
+        'objects/Entity.py',
+        'objects/Utils.py',
     ],
     author="Alexey Shytikov",
     author_email="alexey.shytikov@gmail.com",

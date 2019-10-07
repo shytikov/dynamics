@@ -4,30 +4,20 @@ A Helper pip package for `pandas` interaction with MS Dynamics instances.
 
 The code will try to clean up data available in MS Dynamics instance by casting to correct Python types and pushing it pandas' `DataFrame`.
 
-## Connecting to MS Dynamics instance:
+## Reading entity data to dataframe:
 
 ```
 import dynamics
 
-connection = dynamics.connect(
+
+# Create a dataframe which will hold needed information
+data = pandas.DataFrame()
+
+data.dynamics.connect(
     'https://instance.crm4.dynamics.com', 
     'user@instance.onmicrosoft.com', 
-    'password')
-```
+    'password').entity("prefix_entity").read()
 
-## Reading entity data to dataframe:
 
-```
-entity = connection.entity("prefix_entity")
-entity.read()
-
-print(entity.data)
-```
-
-## Deleting data from MS Dynamics instance:
-
-```
-entity = connection.entity("prefix_entity")
-entity.read()
-entity.delete()
+print(data)
 ```
