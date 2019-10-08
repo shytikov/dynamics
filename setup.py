@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='dynamics',
-    version='0.5',
+    version='0.5.1',
     scripts=[
         'objects/Connection.py',
         'objects/Entity.py',

@@ -100,9 +100,7 @@ class Entity:
         self.data.drop(self.data.columns, axis=1, inplace=True)
 
         data = pandas.DataFrame(data)
-
-        for item in data.columns:
-            self.data.insert(data.columns.get_loc(item), item, data[item])
+        self.data[data.columns] = data
 
         columns = []
         columns.extend(self.metadata[self.metadata['AttributeType'] == 'Integer']['LogicalName'].tolist())
